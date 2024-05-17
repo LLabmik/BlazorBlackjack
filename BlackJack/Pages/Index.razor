@@ -1,0 +1,172 @@
+﻿@page "/"
+@using System.ComponentModel.DataAnnotations;
+<PageTitle>BlackJack</PageTitle>
+
+@switch (PageState)
+{
+    case PageStates.Default:
+        {
+            <h3>Welcome!</h3>
+            <div>
+                <EditForm Model="NameModel" OnValidSubmit="GetPlayerName">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <label>
+                        What's your name?
+                        <InputText id="name" @bind-Value="NameModel.Name" autofocus></InputText>
+                    </label>
+                    <button type="submit" class="btn btn-primary btn-sm">Enter Name</button>
+                </EditForm>
+            </div>
+        }
+        break;
+
+    case PageStates.Bet:
+        {
+            <h3>Place Bet</h3>
+            <p style="color: red; font-size: larger;">@ActionMessage</p>
+            <p>
+                Welcome, @PlayerName! You have $@PlayerCash. How much would you like to bet?
+            </p>
+            <div>
+                <EditForm Model="BetModel" OnValidSubmit="BeginGame">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <label>
+                        Bet Amount
+                        <InputNumber id="bet" @bind-Value="BetModel.Bet" autofocus></InputNumber>
+                    </label>
+                    <button type="submit" class="btn btn-primary btn-sm">Place Bet</button>
+                </EditForm>
+            </div>
+        }
+        break;
+
+    case PageStates.StartGame:
+        {
+            <h5>First Deal</h5>
+            <p>Bet Amount: $@BetAmount</p>
+            <p>Player Cash: $@PlayerCash</p>
+
+            <p style="color: lawngreen">@ActionMessage</p>
+
+            <div class="float-start me-3 p-2 mb-2" style="background-color: green">
+                <div>@PlayerName</div>
+                <div style="color:yellow">Score: @PlayerHand.Score()</div>
+                <div>
+                    @{
+                        string cardPath = CardImageFilename(PlayerHand.Cards[0] % CardsInOneDeck);
+                        string cardTitle = cardPath.Substring(cardPath.LastIndexOf(".svg") - 2, 2);
+                        <img src="@cardPath" class="plcard me-2" title="@cardTitle.ToUpper()" />
+
+                        string cardPath2 = CardImageFilename(PlayerHand.Cards[1] % CardsInOneDeck);
+                        string cardTitle2 = cardPath2.Substring(cardPath2.LastIndexOf(".svg") - 2, 2);
+                        <img src="@cardPath2" class="plcard" title="@cardTitle2.ToUpper()" />
+                    }
+                </div>
+            </div>
+
+            <div class="float-start me-3 p-2" style="background-color: green">
+                <div>DEALER</div>
+                <div style="color:yellow">Score: @DealerHand.Score()</div>
+                <div>
+                    <img src="./images/cards/cardbackblue.svg" class="plcard me-1" title="Hidden" />
+                    @{
+                        string dealerCardPath = CardImageFilename(DealerHand.Cards[1] % CardsInOneDeck);
+                        string dealerCardTitle = dealerCardPath.Substring(dealerCardPath.LastIndexOf(".svg") - 2, 2);
+                    }
+                    <img src="@dealerCardPath" class="plcard" title="@dealerCardTitle.ToUpper()" />
+                </div>
+            </div>
+
+            <div class="clearfix"></div>
+            <div class="pt-2">
+                <button class="btn btn-danger btn-sm" @onclick=Hit>Hit Me</button>
+                <button class="btn btn-info btn-sm" @onclick=Stand>Stand</button>
+            </div>
+        }
+        break;
+
+    case PageStates.Hit:
+        {
+            <h5>Hit</h5>
+
+            <div class="float-start me-3 p-2 mb-2" style="background-color: green">
+                <div>@PlayerName</div>
+                <div style="color:yellow">Score: @PlayerHand.Score()</div>
+                <div>
+                    @foreach (var card in PlayerHand.Cards)
+                    {
+                        string cardPath = CardImageFilename(card % CardsInOneDeck);
+                        string cardTitle = cardPath.Substring(cardPath.LastIndexOf(".svg") - 2, 2);
+                        <img src="@cardPath" class="plcard me-2" title="@cardTitle.ToUpper()" />
+                    }
+                </div>
+            </div>
+
+            <div class="float-start me-3 p-2" style="background-color: green">
+                <div>DEALER</div>
+                <div style="color:yellow">Score: @DealerHand.Score()</div>
+                <div>
+                    <img src="./images/cards/cardbackblue.svg" class="plcard me-1" title="Hidden" />
+                    @{
+                        string dealerCardPath = CardImageFilename(DealerHand.Cards[1] % CardsInOneDeck);
+                        string dealerCardTitle = dealerCardPath.Substring(dealerCardPath.LastIndexOf(".svg") - 2, 2);
+                    }
+                    <img src="@dealerCardPath" class="plcard" title="@dealerCardTitle.ToUpper()" />
+                </div>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <div class="pt-2">
+                <button class="btn btn-danger btn-sm" @onclick=Hit>Hit Me</button>
+                <button class="btn btn-info btn-sm" @onclick=Stand>Stand</button>
+            </div>
+        }
+        break;
+
+    case PageStates.Stand:
+        {
+            <h5>Stand</h5>
+
+            <div class="float-start me-3 p-2 mb-2" style="background-color: green">
+                <div>@PlayerName</div>
+                <div style="color: @(PlayerHand.Score() <= 21 ? "yellow" : "red")" class="@(PlayerHand.Score() <= 21 ? "" : "blinking")">
+                    Score: @(PlayerHand.Score() <= 21 ? PlayerHand.Score() : "BUSTED")
+                </div>
+                <div>
+                    @foreach (var card in PlayerHand.Cards)
+                    {
+                        string cardPath = CardImageFilename(card % CardsInOneDeck);
+                        string cardTitle = cardPath.Substring(cardPath.LastIndexOf(".svg") - 2, 2);
+                        <img src="@cardPath" class="plcard me-2" title="@cardTitle.ToUpper()" />
+                    }
+                </div>
+            </div>
+
+            <div class="float-start me-3 p-2" style="background-color: green">
+                <div>DEALER</div>
+                <div style="color: @(DealerHand.Score() <= 21 ? "yellow" : "red")" class="@(DealerHand.Score() <= 21 ? "" : "blinking")">
+                    Score: @(DealerHand.Score() <= 21 ? DealerHand.Score() : "BUSTED")
+                </div>
+                <div>
+                    @foreach (var card in DealerHand.Cards)
+                    {
+                        string cardPath = CardImageFilename(card % CardsInOneDeck);
+                        string cardTitle = cardPath.Substring(cardPath.LastIndexOf(".svg") - 2, 2);
+                        <img src="@cardPath" class="plcard me-2" title="@cardTitle.ToUpper()" />
+                    }
+                </div>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <div>@ActionMessage</div>
+
+            <div class="pt-2">
+                <button class="btn btn-primary btn-sm" @onclick=NewGame>New Game?</button>
+            </div>
+        }
+        break;
+}
